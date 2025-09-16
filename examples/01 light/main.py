@@ -2,7 +2,7 @@ import time
 
 from machine import Pin
 
-led = Pin(2, Pin.OUT)  # GPIO2 接 LED
+led = Pin(9, Pin.OUT)  # GPIO2 接 LED
 
 while True:
     led.value(1)  # 开灯
