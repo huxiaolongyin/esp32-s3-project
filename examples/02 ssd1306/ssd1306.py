@@ -2,26 +2,26 @@
 
 import time
 
-import framebuf
+import framebuf  # type: ignore
 
 # register definitions
-SET_CONTRAST = const(0x81)
-SET_ENTIRE_ON = const(0xA4)
-SET_NORM_INV = const(0xA6)
-SET_DISP = const(0xAE)
-SET_MEM_ADDR = const(0x20)
-SET_COL_ADDR = const(0x21)
-SET_PAGE_ADDR = const(0x22)
-SET_DISP_START_LINE = const(0x40)
-SET_SEG_REMAP = const(0xA0)
-SET_MUX_RATIO = const(0xA8)
-SET_COM_OUT_DIR = const(0xC0)
-SET_DISP_OFFSET = const(0xD3)
-SET_COM_PIN_CFG = const(0xDA)
-SET_DISP_CLK_DIV = const(0xD5)
-SET_PRECHARGE = const(0xD9)
-SET_VCOM_DESEL = const(0xDB)
-SET_CHARGE_PUMP = const(0x8D)
+SET_CONTRAST = const(0x81)  # type: ignore
+SET_ENTIRE_ON = const(0xA4)  # type: ignore
+SET_NORM_INV = const(0xA6)  # type: ignore
+SET_DISP = const(0xAE)  # type: ignore
+SET_MEM_ADDR = const(0x20)  # type: ignore
+SET_COL_ADDR = const(0x21)  # type: ignore
+SET_PAGE_ADDR = const(0x22)  # type: ignore
+SET_DISP_START_LINE = const(0x40)  # type: ignore
+SET_SEG_REMAP = const(0xA0)  # type: ignore
+SET_MUX_RATIO = const(0xA8)  # type: ignore
+SET_COM_OUT_DIR = const(0xC0)  # type: ignore
+SET_DISP_OFFSET = const(0xD3)  # type: ignore
+SET_COM_PIN_CFG = const(0xDA)  # type: ignore
+SET_DISP_CLK_DIV = const(0xD5)  # type: ignore
+SET_PRECHARGE = const(0xD9)  # type: ignore
+SET_VCOM_DESEL = const(0xDB)  # type: ignore
+SET_CHARGE_PUMP = const(0x8D)  # type: ignore
 
 
 class SSD1306:
@@ -33,7 +33,7 @@ class SSD1306:
         # Note the subclass must initialize self.framebuf to a framebuffer.
         # This is necessary because the underlying data buffer is different
         # between I2C and SPI implementations (I2C needs an extra byte).
-        self.poweron()
+        self.poweron()  # type: ignore
         self.init_display()
 
     def init_display(self):
@@ -69,19 +69,19 @@ class SSD1306:
             0x10 if self.external_vcc else 0x14,
             SET_DISP | 0x01,
         ):  # on
-            self.write_cmd(cmd)
+            self.write_cmd(cmd)  # type: ignore
         self.fill(0)
         self.show()
 
     def poweroff(self):
-        self.write_cmd(SET_DISP | 0x00)
+        self.write_cmd(SET_DISP | 0x00)  # type: ignore
 
     def contrast(self, contrast):
-        self.write_cmd(SET_CONTRAST)
-        self.write_cmd(contrast)
+        self.write_cmd(SET_CONTRAST)  # type: ignore
+        self.write_cmd(contrast)  # type: ignore
 
     def invert(self, invert):
-        self.write_cmd(SET_NORM_INV | (invert & 1))
+        self.write_cmd(SET_NORM_INV | (invert & 1))  # type: ignore
 
     def show(self):
         x0 = 0
@@ -90,25 +90,25 @@ class SSD1306:
             # displays with width of 64 pixels are shifted by 32
             x0 += 32
             x1 += 32
-        self.write_cmd(SET_COL_ADDR)
-        self.write_cmd(x0)
-        self.write_cmd(x1)
-        self.write_cmd(SET_PAGE_ADDR)
-        self.write_cmd(0)
-        self.write_cmd(self.pages - 1)
-        self.write_framebuf()
+        self.write_cmd(SET_COL_ADDR)  # type: ignore
+        self.write_cmd(x0)  # type: ignore
+        self.write_cmd(x1)  # type: ignore
+        self.write_cmd(SET_PAGE_ADDR)  # type: ignore
+        self.write_cmd(0)  # type: ignore
+        self.write_cmd(self.pages - 1)  # type: ignore
+        self.write_framebuf()  # type: ignore
 
     def fill(self, col):
-        self.framebuf.fill(col)
+        self.framebuf.fill(col)  # type: ignore
 
     def pixel(self, x, y, col):
-        self.framebuf.pixel(x, y, col)
+        self.framebuf.pixel(x, y, col)  # type: ignore
 
     def scroll(self, dx, dy):
-        self.framebuf.scroll(dx, dy)
+        self.framebuf.scroll(dx, dy)  # type: ignore
 
     def text(self, string, x, y, col=1):
-        self.framebuf.text(string, x, y, col)
+        self.framebuf.text(string, x, y, col)  # type: ignore
 
 
 class SSD1306_I2C(SSD1306):
@@ -174,7 +174,7 @@ class SSD1306_SPI(SSD1306):
 
     def poweron(self):
         self.res.high()
-        time.sleep_ms(1)
+        time.sleep_ms(1)  # type: ignore
         self.res.low()
-        time.sleep_ms(10)
+        time.sleep_ms(10)  # type: ignore
         self.res.high()

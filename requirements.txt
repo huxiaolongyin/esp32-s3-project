@@ -1,1 +1,2 @@
 esptool
+micropython-esp32-s3-stubs # micropython-s3 静态显示

@@ -1,6 +1,6 @@
 import time
 
-from machine import Pin
+from machine import Pin  # type: ignore
 
 led = Pin(9, Pin.OUT)  # GPIO2 接 LED
 
