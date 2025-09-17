@@ -1,7 +1,18 @@
 # 简介
+这是一个大模型和硬件结合的快速搭建原型，目的是构建一个可交互的人工智能
+硬件:
+  1. `ESP32-S3-DevKitC-1` 开发板（搭载 ESP32-S3-N16R8 芯片）
+  2. `INMP441` 麦克风
+  3. 扬声器
+  4. 0.91寸 OLED显示屏
 
-这是一个使用 Python 控制硬件的入门项目，基于 `ESP32-S3-DevKitC-1` 开发板（搭载 ESP32-S3-N16R8 芯片），通过 MicroPython 实现对 GPIO、传感器、LED、串口等外设的编程控制。
-最终刷入AI固件，实现硬件与大模型的交互
+硬件开发: micropython 固件
+
+大模型: 
+  - 文本、TTS、ASR都为第三方服务
+
+软件服务
+  - python 开发接收和处理 MQTT 消息
 
 # 快速开始
 
@@ -23,15 +34,7 @@ esptool --chip esp32s3 --port COM4 --baud 921600 write_flash -z 0x0000 firmware/
 
 - 安装插件(VSCode 配置环境)
 
-1. Serial Monitor
-2. RT-Thread MicroPython
-
-- 连接串口
-
-```python
-按 `Ctrl+Shift+P` → 输入 `Serial Monitor: Open` → 选择你的端口（如 `COM5`）。
-波特率设置为 **115200**，回车后应看到 MicroPython 提示符 `>>>`。
-```
+1. RT-Thread MicroPython
 
 - 测试
 
@@ -41,4 +44,25 @@ import machine
 led = machine.Pin(2, machine.Pin.OUT)
 led.value(1)  # 点亮 LED
 print("Hello from MicroPython on ESP32-S3!")
+```
+
+# 架构
+
+```shell
+# 快速原型版
+录音 (ESP32)
+   ↓ (MQTT)
+接收音频 (Python服务)
+   ↓
+唤醒词检测 (本地)
+   ↓
+ASR云服务 (转为文本)
+   ↓ (MQTT)
+显示文本 (ESP32 OLED)
+   ↓
+LLM云服务 (生成回复)
+   ↓
+TTS云服务 (转为语音)
+   ↓ (MQTT)
+播放语音 + 显示文本 (ESP32)
 ```

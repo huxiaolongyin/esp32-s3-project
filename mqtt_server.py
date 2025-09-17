@@ -15,20 +15,18 @@ MQTT_TOPIC_REQUEST = "esp32s3/request"
 MQTT_TOPIC_RESPONSE = "esp32s3/response"
 
 # OpenAI API 配置（推荐使用环境变量，避免泄露）
-OPENAI_API_KEY = os.getenv(
-    "OPENAI_API_KEY", "sk-wedekzslvzzgekpxgqepyrebwklmysvsphdubyffmurjxkjj"
-)
+OPENAI_API_KEY = "sk-wedekzslvzzgekpxgqepyrebwklmysvsphdubyffmurjxkjj"
 OPENAI_BASE_URL = "https://api.siliconflow.cn/v1"
 OPENAI_MODEL = "Qwen/Qwen2.5-32B-Instruct"
 
 # 初始化 OpenAI 客户端
-OpenAIclient = OpenAI(
+llm_client = OpenAI(
     api_key=OPENAI_API_KEY,
     base_url=OPENAI_BASE_URL,
 )
 
 # MQTT 客户端实例
-client = mqtt.Client(client_id="openai-gateway-server")
+mqtt_client = mqtt.Client(client_id="openai-gateway-server")
 
 
 def log(msg):
@@ -67,14 +65,13 @@ def on_message(client, userdata, msg):
             log(f"📩 收到请求: {prompt}")
 
             # 调用 OpenAI
-            response = OpenAIclient.chat.completions.create(
-                model=OPENAI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                timeout=10,
+            response = llm_client.chat.completions.create(
+                model=OPENAI_MODEL, messages=[{"role": "user", "content": prompt}]
             )
-            reply = response.choices[0].message.content.strip()
+            reply = response.choices[0].message.content
 
-            print(reply)
+            log(f"📩 回复内容: {reply}")
+            # print(reply)
 
             # 发送响应回 ESP32
             client.publish(MQTT_TOPIC_RESPONSE, reply)
@@ -91,16 +88,16 @@ def on_message(client, userdata, msg):
 
 
 # 设置回调函数
-client.on_connect = on_connect
-client.on_disconnect = on_disconnect
-client.on_message = on_message
+mqtt_client.on_connect = on_connect
+mqtt_client.on_disconnect = on_disconnect
+mqtt_client.on_message = on_message
 
 # 尝试连接 MQTT
 log("🚀 启动 MQTT-OpenAI 网关...")
 while True:
     try:
-        client.connect(MQTT_BROKER, MQTT_PORT, 60)
-        client.loop_forever()
+        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+        mqtt_client.loop_forever()
     except Exception as e:
         log(f"⚠️ 连接失败: {e}，3秒后重试...")
         time.sleep(3)
