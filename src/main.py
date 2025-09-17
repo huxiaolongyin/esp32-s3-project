@@ -1,16 +1,14 @@
 # examples/03 wifi/main.py
-import base64
-import json
 import time
 
-import ujson  # type: ignore
 from machine import I2C, Pin  # type: ignore
 
 import mqtt
-import ssd1306
+from microphone import record_audio
+from speaker import play_audio
+# import ssd1306
 import wifi
 
-# from speaker import play_audio
 
 # 设备信息
 device_id = "esp32-001"  # 替换为你的设备ID
@@ -19,9 +17,9 @@ device_id = "esp32-001"  # 替换为你的设备ID
 USER_PROMPT = "Hello"  # 可替换为传感器数据、按钮触发等
 
 MQTT_TOPIC_REQUEST = f"ai/{device_id}/request".encode()  # 发送请求的主题
-MQTT_TOPIC_RESPONSE = f"ai/{device_id}/reponse".encode()  # 接收回复的主题
+MQTT_TOPIC_RESPONSE = [f"ai/{device_id}/asr".encode(),f"ai/{device_id}/llm".encode(),f"ai/{device_id}/tts".encode(), ] # 接收回复的主题
 
-button = Pin(1, Pin.IN, Pin.PULL_UP)  # GPIO01 接按钮，按下时接地
+button = Pin(40, Pin.IN, Pin.PULL_UP)  # GPIO01 接按钮，按下时接地
 
 # 屏幕显示
 # i2c = I2C(scl=Pin(18), sda=Pin(19))
@@ -32,19 +30,13 @@ audio_buffer = b""
 
 # 回调函数：收到服务器回复时触发
 def on_message(topic, payload):
-    if topic == MQTT_TOPIC_RESPONSE:
-        data = ujson.loads(payload)
-        asr = data.get("asr", "")
-        response = data.get("response", "")
-        if asr:
-            print(f"ASR识别: {asr}")
-        if response:
-            llm = response.get("llm", "")
-            tts = base64.b64decode(response.get("tts", ""))
-            if llm:
-                print(f"LLM回复: {llm}")
-            if tts:
-                print(f"TTS音频长度: {len(tts)} 字节")
+    if topic == MQTT_TOPIC_RESPONSE[0]:
+        print(f"ASR识别: {payload.decode()}")
+    elif topic == MQTT_TOPIC_RESPONSE[1]:
+        print(f"LLM回复: {payload.decode()}")
+    elif topic == MQTT_TOPIC_RESPONSE[2]:
+        print(f"TTS音频长度: {len(payload)} 字节")
+        play_audio(payload)
 
 
 # 主程序
@@ -53,7 +45,8 @@ def main():
     client = mqtt.connect()
     # 设置消息回调（接收 AI 回复）
     client.set_callback(on_message)
-    client.subscribe(MQTT_TOPIC_RESPONSE)
+    for topic in MQTT_TOPIC_RESPONSE:
+        client.subscribe(topic)
 
     print(f"🔔 Subscribed to the reply topic")
 
@@ -67,10 +60,11 @@ def main():
                 # 防抖处理
                 time.sleep(0.1)
                 if button.value() == 0:  # 确认按钮确实按下
+                    audio_data = record_audio()
                     # 发送一次测试请求
-                    request_data = {"prompt": USER_PROMPT}
-                    client.publish(MQTT_TOPIC_REQUEST, json.dumps(request_data))
-                    print(f"📤 A request has been sent: {request_data}")
+                    # request_data = {"prompt": USER_PROMPT}
+                    client.publish(MQTT_TOPIC_REQUEST, audio_data)
+                    print(f"📤 A request has been sent")
 
                     # 等待按钮释放
                     while button.value() == 0:

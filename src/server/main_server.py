@@ -1,10 +1,13 @@
-import base64
+# import base64
 import json
+import os
+import time
 
 import paho.mqtt.client as mqtt
 from asr_client import transcribe_asr
 from llm_client import get_response
 from tts_client import transcribe_tts
+import wave
 
 MQTT_BROKER = "112.124.69.152"
 MQTT_PORT = 1883
@@ -12,6 +15,21 @@ MQTT_PORT = 1883
 # WAKE_WORD = "你好"
 
 PUNCTUATIONS = ["，", "。", "！", "？", "；"]
+
+# 音频参数（需与 ESP32 端一致）
+SAMPLE_RATE = 44100
+SAMPLE_WIDTH = 2  # 16-bit = 2 bytes
+CHANNELS = 1  # MONO
+
+
+# 保存音频的函数
+def save_audio_as_wav(audio_data, filename):
+    with wave.open(filename, "wb") as wav_file:
+        wav_file.setnchannels(CHANNELS)
+        wav_file.setsampwidth(SAMPLE_WIDTH)
+        wav_file.setframerate(SAMPLE_RATE)
+        wav_file.writeframes(audio_data)
+    print(f"音频已保存为: {filename}")
 
 
 def on_connect(client, userdata, flags, rc):
@@ -36,22 +54,30 @@ def split_text_by_punctuation(text: str):
 def on_message(client, userdata, msg):
     if msg.topic == "ai/esp32-001/request":
         audio_data = msg.payload
-        print("Received audio data")
 
-        audio_data = (
-            r"C:\Users\Administrator\code\esp32-s3-project\src\server\welcome.mp3"
-        )
+        # 生成文件名（按时间命名）
+        filename = f"recorded_audio_{int(time.time())}.wav"
+
+        # 保存音频数据为 WAV 文件
+        save_audio_as_wav(audio_data, filename)
+
+        absolute_path = os.path.abspath(filename)
+        print(f"Received audio data：{absolute_path}")
+
+        # audio_data = (
+        #     r"C:\Users\Administrator\code\esp32-s3-project\src\server\welcome.mp3"
+        # )
 
         # # 唤醒词检测（简化版）
         # if not wake_word_detected(audio_data):
         #     return
 
         # ASR
-        text = transcribe_asr(audio_data)
+        text = transcribe_asr(absolute_path)
         print("ASR result:", text)
 
-        client.publish("ai/esp32-001/reponse", json.dumps({"asr": text}))
-        print("send to mqtt:", {"asr": text})
+        client.publish("ai/esp32-001/asr", text)
+        print("send to mqtt:", text)
 
         # LLM
         segment = ""
@@ -63,15 +89,17 @@ def on_message(client, userdata, msg):
                     reply, segment = segment.split(punc, 1)
                     tts_audio = transcribe_tts(reply)
                     reply += punc
-                    client.publish(
-                        "ai/esp32-001/reponse",
-                        json.dumps({"llm": reply, "tts": tts_audio}),
-                    )
+                    client.publish("ai/esp32-001/llm", reply)
+                    client.publish("ai/esp32-001/tts", tts_audio)
+
         # 处理剩余文本
         if segment:
             tts_audio = transcribe_tts(segment)
             client.publish(
-                "ai/esp32-001/reponse", json.dumps({"llm": segment, "tts": tts_audio})
+                "ai/esp32-001/llm", segment
+            )
+            client.publish(
+                "ai/esp32-001/tts", tts_audio
             )
 
         # TTS
