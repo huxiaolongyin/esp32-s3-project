@@ -1,2 +1,7 @@
 esptool
 micropython-esp32-s3-stubs # micropython-s3 静态显示
+dashscope
+paho-mqtt
+openai
+numpy
+pyaudio
