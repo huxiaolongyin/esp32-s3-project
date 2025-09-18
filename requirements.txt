@@ -5,3 +5,4 @@ paho-mqtt
 openai
 numpy
 pyaudio
+font_to_py # 字体转换工具 font_to_py .\font\msyh.ttf 16 .\font\msyh.py
