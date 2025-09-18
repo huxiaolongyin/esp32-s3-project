@@ -1,10 +1,11 @@
 import time
-from machine import I2S, Pin
 
+from machine import I2S, Pin  # type: ignore
 
 # I2S 配置
 SAMPLE_RATE = 24000
 BUF_LEN = 4000
+
 
 def play_audio(wav_bytes: bytes):
 
@@ -36,10 +37,10 @@ def play_audio(wav_bytes: bytes):
             i2s.write(chunk)
             offset += chunk_size
 
-        print("[Speaker] 播放完成")
+        print("auido play finished")
 
     except Exception as e:
-        print(f"[Speaker] 播放失败: {e}")
+        print(f"audio play failed: {e}")
     finally:
         if i2s:
             i2s.deinit()

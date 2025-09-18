@@ -1,25 +1,29 @@
-# examples/03 wifi/main.py
 import time
 
 from machine import I2C, Pin  # type: ignore
 
 import mqtt
+import wifi
 from microphone import record_audio
 from speaker import play_audio
+
 # import ssd1306
-import wifi
-
-
 # 设备信息
 device_id = "esp32-001"  # 替换为你的设备ID
+SSID = "TP-LINK_630A"
+WIFI_PWD = "13141314"
 
 # === 用户输入提示 ===
 USER_PROMPT = "Hello"  # 可替换为传感器数据、按钮触发等
 
 MQTT_TOPIC_REQUEST = f"ai/{device_id}/request".encode()  # 发送请求的主题
-MQTT_TOPIC_RESPONSE = [f"ai/{device_id}/asr".encode(),f"ai/{device_id}/llm".encode(),f"ai/{device_id}/tts".encode(), ] # 接收回复的主题
+MQTT_TOPIC_RESPONSE = [
+    f"ai/{device_id}/asr".encode(),
+    f"ai/{device_id}/llm".encode(),
+    f"ai/{device_id}/tts".encode(),
+]  # 接收回复的主题
 
-button = Pin(40, Pin.IN, Pin.PULL_UP)  # GPIO01 接按钮，按下时接地
+button = Pin(40, Pin.IN, Pin.PULL_UP)  # GPIO40 接按钮，按下时接地
 
 # 屏幕显示
 # i2c = I2C(scl=Pin(18), sda=Pin(19))
@@ -41,7 +45,8 @@ def on_message(topic, payload):
 
 # 主程序
 def main():
-    wifi.connect()
+    # 连接 WIFI
+    wifi.connect(SSID, WIFI_PWD)
     client = mqtt.connect()
     # 设置消息回调（接收 AI 回复）
     client.set_callback(on_message)
@@ -58,11 +63,9 @@ def main():
             # 检查按钮是否按下
             if button.value() == 0:  # 按钮按下
                 # 防抖处理
-                time.sleep(0.1)
+                time.sleep(0.05)
                 if button.value() == 0:  # 确认按钮确实按下
                     audio_data = record_audio()
-                    # 发送一次测试请求
-                    # request_data = {"prompt": USER_PROMPT}
                     client.publish(MQTT_TOPIC_REQUEST, audio_data)
                     print(f"📤 A request has been sent")
 
