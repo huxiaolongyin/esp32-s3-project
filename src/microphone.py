@@ -1,5 +1,4 @@
 from machine import I2S, Pin  # type: ignore
-import time
 
 # 录音参数
 SAMPLE_RATE = 44100
